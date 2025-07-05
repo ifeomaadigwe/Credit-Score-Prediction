@@ -13,7 +13,6 @@ CURRENT_DIR = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", "best_model.pkl")
 SCALER_PATH = os.path.join(CURRENT_DIR, "models", "scaler.pkl")
 
-
 # --- Load model and scaler ---
 @st.cache_resource(show_spinner=False)
 def load_model_and_scaler():
@@ -34,11 +33,11 @@ st.sidebar.title("🧾 Feature Guidance")
 st.sidebar.markdown("""
 - **Outstanding Debt**: Total debt in your account  
 - **Interest Rate**: Annual percentage rate on loans  
-- **Credit Mix**: Credit diversity (Poor = 0, Standard = 1, Good = 2)  
+- **Age**: Applicant's age in years  
 - **Delay from Due Date**: Average late days  
 - **Changed Credit Limit**: Amount your credit limit changed  
 - **Credit History Age**: Total months since credit inception  
-- **Num Credit Inquiries**: Recent hard pulls  
+- **Occupation**: Professional role or employment type  
 - **Monthly Balance**: End-of-month account balance  
 - **Amount Invested Monthly**: Monthly savings or investments  
 - **Number of Credit Cards**: Active cards on file  
@@ -50,14 +49,13 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     outstanding_debt = st.number_input("Outstanding Debt", min_value=0.0, step=100.0)
-    credit_mix_label = st.selectbox("Credit Mix", ["Poor", "Standard", "Good"])
-    credit_mix = {"Poor": 0, "Standard": 1, "Good": 2}[credit_mix_label]
+    age = st.number_input("Age (years)", min_value=18, max_value=100, step=1, value=30)
     credit_history = st.number_input("Credit History Age (months)", min_value=0, step=1, value=36)
 
 with col2:
     interest_rate = st.number_input("Interest Rate (%)", min_value=0.0, max_value=100.0, step=0.5)
     delay_days = st.number_input("Avg. Delay from Due Date (days)", min_value=0, step=1)
-    credit_inquiries = st.number_input("Number of Credit Inquiries", min_value=0, step=1)
+    occupation = st.selectbox("Occupation", ["Student", "Self-employed", "Employed", "Unemployed", "Retired"])
 
 with col3:
     credit_limit_change = st.number_input("Changed Credit Limit", step=100.0)
@@ -65,15 +63,25 @@ with col3:
     monthly_investment = st.number_input("Amount Invested Monthly", step=100.0)
     num_credit_card = st.number_input("Number of Credit Cards", min_value=0, step=1)
 
+# --- Encode categorical feature (occupation) ---
+occupation_mapping = {
+    "Student": 0,
+    "Self-employed": 1,
+    "Employed": 2,
+    "Unemployed": 3,
+    "Retired": 4
+}
+occupation_encoded = occupation_mapping.get(occupation, -1)
+
 # --- Format input for prediction ---
 input_features = np.array([[
     outstanding_debt,
     interest_rate,
-    credit_mix,
+    age,
     delay_days,
     credit_limit_change,
     credit_history,
-    credit_inquiries,
+    occupation_encoded,
     monthly_balance,
     monthly_investment,
     num_credit_card
